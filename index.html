@@ -3,299 +3,458 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>股票投資組合追蹤器 (收盤價)</title>
+    <title>股票持有管理</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jf-openhuninn-1.1/font.css">
     <style>
+        /* --- 使用標準 CSS 定義樣式 (取代 @apply) --- */
+
+        /* 基本樣式與字體 */
+        html {
+            box-sizing: border-box;
+        }
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6; /* 淺灰色背景 */
-        }
-        .container {
-            max-width: 800px;
-            margin: 2rem auto;
-            padding: 2rem;
-            background-color: white;
-            border-radius: 0.5rem; /* 圓角 */
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* 陰影 */
-        }
-        .form-input, .form-button {
-            border-radius: 0.375rem; /* 圓角 */
-            padding: 0.75rem 1rem;
-            border: 1px solid #d1d5db; /* 灰色邊框 */
-            transition: box-shadow 0.15s ease-in-out;
-        }
-        .form-input:focus {
-            outline: none;
-            border-color: #3b82f6; /* 藍色焦點邊框 */
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
-        }
-        .form-button {
-            background-color: #3b82f6; /* 藍色按鈕 */
-            color: white;
-            cursor: pointer;
-            transition: background-color 0.15s ease-in-out;
-        }
-        .form-button:hover {
-            background-color: #2563eb; /* 深藍色懸停效果 */
-        }
-        .stock-table th, .stock-table td {
-            padding: 0.75rem 1rem;
-            text-align: left;
-            border-bottom: 1px solid #e5e7eb; /* 淺灰色底線 */
-        }
-        .stock-table th {
-            background-color: #f9fafb; /* 更淺的灰色表頭 */
-            font-weight: 600;
-            color: #4b5563; /* 深灰色文字 */
-        }
-        .remove-button {
-            background-color: #ef4444; /* 紅色移除按鈕 */
-            color: white;
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.25rem;
-            cursor: pointer;
-            transition: background-color 0.15s ease-in-out;
-            font-size: 0.875rem; /* 稍小字體 */
-        }
-        .remove-button:hover {
-            background-color: #dc2626; /* 深紅色懸停效果 */
-        }
-        .total-value {
-            margin-top: 1.5rem;
+            font-family: 'jf-openhuninn', 'Noto Sans TC', sans-serif;
+            background-color: #1f2937; /* gray-800 */
+            color: #f3f4f6; /* gray-100 */
+            margin: 0;
             padding: 1rem;
-            background-color: #eef2ff; /* 淡藍色背景 */
-            border-radius: 0.375rem;
-            text-align: right;
-            font-size: 1.125rem; /* 稍大字體 */
-            font-weight: 600;
-            color: #374151; /* 深灰色文字 */
         }
-        /* 手機版樣式 */
-        @media (max-width: 640px) {
-            .container {
-                margin: 1rem;
-                padding: 1rem;
-            }
-            .add-stock-form {
-                display: flex;
-                flex-direction: column;
-                gap: 0.5rem; /* 欄位間距 */
-            }
-            .stock-table th, .stock-table td {
-                padding: 0.5rem;
-                font-size: 0.875rem; /* 手機版字體縮小 */
-            }
-            .stock-table th:nth-child(3), /* 隱藏部分欄位 */
-            .stock-table td:nth-child(3),
-            .stock-table th:nth-child(4),
-            .stock-table td:nth-child(4) {
-                display: none;
-            }
-            .total-value {
-                font-size: 1rem;
-            }
+        @media (min-width: 768px) {
+            body { padding: 2rem; }
         }
+
+        .container {
+             max-width: 48rem; /* max-w-6xl approx */
+             margin-left: auto;
+             margin-right: auto;
+             display: flex;
+             flex-direction: column;
+             gap: 2rem; /* space-y-8 */
+        }
+
+        /* 區塊容器 */
+        .section-container {
+            background-color: #374151; /* gray-700 */
+            border: 1px solid #4b5563; /* gray-600 */
+            border-radius: 0.5rem; /* rounded-lg */
+            padding: 1rem; /* p-4 */
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+            display: flex;
+            flex-direction: column;
+            gap: 1rem; /* space-y-4 */
+        }
+
+        /* 標題 */
+        h1 { font-size: 1.5rem; line-height: 2rem; font-weight: 700; text-align: center; color: #f3f4f6; }
+        h2 { font-size: 1.25rem; line-height: 1.75rem; font-weight: 600; color: #d1d5db; }
+
+        /* 表單元素 */
+        label { display: block; font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; color: #d1d5db; margin-bottom: 0.25rem; }
+        input[type="text"], input[type="number"] {
+            display: block;
+            width: 100%;
+            border-radius: 0.5rem; /* rounded-lg */
+            border: 1px solid #4b5563; /* border-gray-600 */
+            background-color: #1f2937; /* gray-800 */
+            color: #f3f4f6; /* gray-100 */
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+            font-size: 0.875rem; /* sm:text-sm */
+            padding: 0.5rem 0.75rem; /* px-3 py-2 */
+            line-height: 1.25rem; /* Ensure consistent height */
+        }
+        input:focus {
+             border-color: #4f46e5; /* indigo-600 */
+             outline: 2px solid transparent;
+             outline-offset: 2px;
+             box-shadow: 0 0 0 2px #4f46e5; /* Ring color */
+        }
+
+        /* 按鈕基礎樣式 (Standard CSS equivalent) */
+        button, .button-like {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.5rem; /* rounded-lg */
+            border: 1px solid transparent;
+            padding: 0.5rem 1rem; /* px-4 py-2 */
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 500; /* font-medium */
+            color: white;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+            transition: background-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+            cursor: pointer;
+        }
+        button:focus, .button-like:focus {
+            outline: 2px solid transparent;
+            outline-offset: 2px;
+             box-shadow: 0 0 0 2px var(--tw-ring-offset-color, #1f2937), 0 0 0 4px var(--tw-ring-color); /* focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 */
+        }
+        button:disabled, .button-like:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 按鈕顏色分類 (Standard CSS) */
+        /* .btn-primary { background-color: #4f46e5; --tw-ring-color: #6366f1; }  Removed */
+        /* .btn-primary:hover { background-color: #4338ca; } */
+
+        .btn-data { background-color: #059669; --tw-ring-color: #10b981; padding: 0.375rem 0.75rem; font-size: 0.875rem; } /* bg-green-600, focus:ring-green-500, px-3 py-1.5 text-sm */
+        .btn-data:hover { background-color: #047857; } /* hover:bg-green-700 */
+
+        .btn-danger { background-color: #dc2626; --tw-ring-color: #ef4444; padding: 0.25rem 0.5rem; font-size: 0.75rem; border-radius: 0.375rem; }
+        .btn-danger:hover { background-color: #b91c1c; }
+
+        .btn-undo { background-color: #f59e0b; --tw-ring-color: #fcd34d; color: #1f2937; padding: 0.375rem 0.75rem; font-size: 0.875rem; }
+        .btn-undo:hover { background-color: #d97706; }
+
+        /* 表格樣式 */
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; min-width: 640px; border-collapse: collapse; border: 1px solid #4b5563; }
+        th, td {
+            font-size: 0.875rem;
+            border: 1px solid #4b5563;
+            padding: 0.5rem 0.75rem;
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+        th {
+            background-color: #4b5563;
+            color: #f3f4f6;
+            font-weight: 500;
+        }
+        td {
+             color: #f3f4f6;
+        }
+        /* 表格 Footer */
+        tfoot tr { background-color: #4b5563; font-weight: 500; color: #f3f4f6; }
+        tfoot td { font-weight: 500; color: #f3f4f6; border: 1px solid #4b5563; padding: 0.5rem 0.75rem; }
+
+
+        /* 文字對齊 (由 JS 加入 Utility Class) */
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-left { text-align: left; }
+
+        /* 損益顏色 */
+        .profit { color: #ef4444; } /* red-500 */
+        .loss { color: #22c55e; } /* green-500 */
+
+        /* 狀態文字 */
+        .status-text { font-size: 0.75rem; line-height: 1rem; height: 1rem; margin-top: 0.25rem; }
+        .status-gray { color: #9ca3af; } /* gray-400 */
+        .status-green { color: #34d399; } /* green-400 */
+        .status-blue { color: #60a5fa; } /* blue-400 */
+        .status-purple { color: #a78bfa; } /* purple-400 */
+
+
+        /* 行動裝置響應式 */
+        @media (max-width: 768px) {
+            .mobile-hide { display: none; }
+            .action-col { width: 50px; }
+            th, td { font-size: 0.8rem; padding: 0.5rem; }
+        }
+        /* Loading spinner */
+        .loader {
+            border: 2px solid #4b5563; border-top: 2px solid #6366f1; border-radius: 50%;
+            width: 16px; height: 16px; animation: spin 1s linear infinite;
+            display: inline-block; margin-left: 8px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body>
+<body class="p-4 md:p-8">
     <div class="container">
-        <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">股票投資組合追蹤器 (收盤價)</h1>
-
-        <div class="add-stock-form mb-6 grid grid-cols-1 sm:grid-cols-5 gap-4 items-end">
-            <div>
-                <label for="stock-symbol" class="block text-sm font-medium text-gray-700 mb-1">股票代號:</label>
-                <input type="text" id="stock-symbol" class="form-input w-full" placeholder="例如: 2330">
-            </div>
-            <div>
-                <label for="stock-shares" class="block text-sm font-medium text-gray-700 mb-1">持有股數:</label>
-                <input type="number" id="stock-shares" class="form-input w-full" placeholder="例如: 1000">
-            </div>
-            <div>
-                <label for="stock-price" class="block text-sm font-medium text-gray-700 mb-1">買入均價:</label>
-                <input type="number" id="stock-price" class="form-input w-full" placeholder="例如: 600">
-            </div>
-            <div>
-                <label for="stock-close-price" class="block text-sm font-medium text-gray-700 mb-1">昨日收盤價:</label>
-                <input type="number" id="stock-close-price" class="form-input w-full" placeholder="例如: 650">
-            </div>
-            <button id="add-stock-button" class="form-button w-full sm:w-auto">新增股票</button>
+        <div class="flex justify-between items-center">
+             <h1 class="text-2xl font-bold text-center flex-grow">股票持有管理</h1>
         </div>
 
-        <div class="overflow-x-auto">
-             <table class="min-w-full stock-table">
-                <thead>
-                    <tr>
-                        <th>股票代號</th>
-                        <th>持有股數</th>
-                        <th>買入均價</th>
-                        <th>昨日收盤價</th>
-                        <th>市值</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody id="stock-list">
-                    </tbody>
-            </table>
+        <div class="section-container space-y-4">
+            <div class="flex flex-wrap justify-between items-center gap-4">
+                 <h2>我的持股</h2>
+                 <div class="flex flex-wrap items-center gap-2">
+                    <button id="refresh-daily-btn" class="btn-data">
+                         更新收盤行情
+                         <span id="refresh-spinner" class="hidden loader"></span>
+                    </button>
+                    <button id="export-btn" class="btn-data">匯出資料</button>
+                    <input type="file" id="import-file" accept=".json" style="display: none;">
+                    <button id="import-btn" class="btn-data">匯入資料</button>
+                    <button id="undo-remove-btn" class="btn-undo" style="display: none;">復原上次移除</button>
+                 </div>
+            </div>
+             <p id="refresh-status" class="status-text status-blue"></p>
+             <p id="data-status" class="status-text status-purple"></p>
+             <div class="table-wrapper">
+                <table class="min-w-full">
+                    <thead>
+                        <tr>
+                            <th class="text-center">股號</th>
+                            <th class="text-center">名稱</th>
+                            <th class="text-right">持有股數</th>
+                            <th class="text-right">平均成本</th>
+                            <th class="text-right">收盤價</th>
+                            <th class="mobile-hide text-right">總成本</th>
+                            <th class="text-right">總市值</th>
+                            <th class="text-right">損益</th>
+                            <th class="text-right">損益(%)</th>
+                            <th class="action-col text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="portfolio-body">
+                        </tbody>
+                     <tfoot>
+                        <tr>
+                            <td colspan="6" class="text-right pr-4 mobile-hide">總計</td>
+                            <td colspan="5" class="text-left pl-4 md:hidden">總計</td>
+                            <td id="total-market-value" class="text-right pr-4">0</td>
+                            <td id="total-profit-loss" class="text-right pr-4">0</td>
+                            <td id="total-profit-loss-percent" class="text-right pr-4">0.00%</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
         </div>
 
-
-        <div id="total-value" class="total-value">
-            總市值: NT$ 0.00
+        <div class="section-container space-y-4">
+             <h2>交易紀錄明細</h2>
+             <div class="table-wrapper">
+                <table class="min-w-full">
+                    <thead>
+                        <tr>
+                            <th class="text-center">日期</th>
+                            <th class="text-center">股號</th>
+                            <th class="text-center">名稱</th>
+                            <th class="text-right">買入股數</th>
+                            <th class="text-right">買入價格</th>
+                            <th class="text-right">手續費(NTD)</th>
+                            <th class="action-col text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="purchase-log-body">
+                       </tbody>
+                </table>
+             </div>
         </div>
-         <div id="message-box" class="mt-4 p-3 rounded-md text-sm hidden"></div>
+
+        <div class="flex justify-center mt-4">
+             <button id="toggle-add-form-btn" class="btn-data">顯示新增持股區塊</button>
+        </div>
+        <div id="add-form-section" class="section-container space-y-4" style="display: none;">
+            <h2>新增持股紀錄</h2>
+            <div>
+                <label for="add-symbol">股號*</label>
+                <input type="text" id="add-symbol" placeholder="輸入股號後嘗試自動帶入名稱">
+                <p id="symbol-status" class="status-text status-gray"></p>
+            </div>
+            <div>
+                <label for="add-name">股票名稱*</label>
+                <input type="text" id="add-name" placeholder="自動帶入或手動輸入">
+            </div>
+            <div>
+                <label for="add-shares">買入股數*</label>
+                <input type="number" id="add-shares" step="any" placeholder="例如: 1000 或 50">
+            </div>
+            <div>
+                <label for="add-price">買入價格*</label>
+                <input type="number" id="add-price" step="any" placeholder="例如: 600.5">
+            </div>
+            <div>
+                <label for="add-fee-amount">手續費 (NTD)</label>
+                <input type="number" id="add-fee-amount" step="any" value="0" placeholder="請輸入新台幣金額">
+            </div>
+            <div class="flex justify-start">
+                 <button id="add-purchase-btn" class="btn-data">新增紀錄</button>
+            </div>
+            <p class="text-xs text-gray-400">* 為必填欄位。買入成本將計入手續費。</p>
+            <p id="add-status" class="status-text status-green"></p>
+        </div>
+
     </div>
 
     <script>
-        const stockSymbolInput = document.getElementById('stock-symbol');
-        const stockSharesInput = document.getElementById('stock-shares');
-        const stockPriceInput = document.getElementById('stock-price');
-        const stockClosePriceInput = document.getElementById('stock-close-price'); // 新增收盤價輸入框
-        const addStockButton = document.getElementById('add-stock-button');
-        const stockList = document.getElementById('stock-list');
-        const totalValueDiv = document.getElementById('total-value');
-        const messageBox = document.getElementById('message-box');
+        // --- DOM 元素 ---
+        const addSymbolInput = document.getElementById('add-symbol');
+        const addNameInput = document.getElementById('add-name');
+        const addSharesInput = document.getElementById('add-shares');
+        const addPriceInput = document.getElementById('add-price');
+        const addFeeAmountInput = document.getElementById('add-fee-amount');
+        const addPurchaseBtn = document.getElementById('add-purchase-btn');
+        const addStatus = document.getElementById('add-status');
+        const symbolStatus = document.getElementById('symbol-status');
 
-        // --- 本機儲存相關 ---
-        const LOCAL_STORAGE_KEY = 'stockPortfolioClosingPrice';
+        const refreshDailyBtn = document.getElementById('refresh-daily-btn');
+        const refreshSpinner = document.getElementById('refresh-spinner');
+        const refreshStatus = document.getElementById('refresh-status');
+        const dataStatus = document.getElementById('data-status');
 
-        // 從 localStorage 載入投資組合
-        function loadPortfolio() {
-            const storedPortfolio = localStorage.getItem(LOCAL_STORAGE_KEY);
-            if (storedPortfolio) {
-                try {
-                    return JSON.parse(storedPortfolio);
-                } catch (e) {
-                    console.error("無法解析儲存的投資組合:", e);
-                    showMessage("載入儲存資料時發生錯誤。", "error");
-                    return []; // 解析失敗時返回空陣列
-                }
-            }
-            return []; // 如果沒有儲存的資料，返回空陣列
+        const portfolioBody = document.getElementById('portfolio-body');
+        const totalMarketValueCell = document.getElementById('total-market-value');
+        const totalProfitLossCell = document.getElementById('total-profit-loss');
+        const totalProfitLossPercentCell = document.getElementById('total-profit-loss-percent');
+
+        const purchaseLogBody = document.getElementById('purchase-log-body');
+
+        const exportBtn = document.getElementById('export-btn');
+        const importBtn = document.getElementById('import-btn');
+        const importFileInput = document.getElementById('import-file');
+        const undoRemoveBtn = document.getElementById('undo-remove-btn');
+
+        const toggleAddFormBtn = document.getElementById('toggle-add-form-btn');
+        const addFormSection = document.getElementById('add-form-section');
+
+
+        // --- 全域變數 ---
+        let portfolio = {};
+        let marketData = {};
+        let lastRemovedHolding = null;
+        const LOCAL_STORAGE_KEY = 'stockPortfolioDaily_v16'; // Incremented key
+
+
+        // --- Helper Function ---
+        function padZero(num) {
+            return num.toString().padStart(2, '0');
         }
 
-        // 將投資組合儲存到 localStorage
-        function savePortfolio(portfolio) {
+        // --- 資料處理函式 ---
+
+        function loadPortfolio() {
+            const savedPortfolio = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (savedPortfolio) {
+                try {
+                    portfolio = JSON.parse(savedPortfolio);
+                     if (typeof portfolio !== 'object' || portfolio === null) portfolio = {};
+                     Object.values(portfolio).forEach(holding => {
+                         if (!Array.isArray(holding.purchases)) holding.purchases = [];
+                         holding.purchases.forEach(p => { if (!p.date) p.date = 'N/A'; });
+                     });
+                    console.log("Portfolio v16 loaded:", portfolio);
+                } catch (e) {
+                    console.error("Error parsing saved portfolio data:", e);
+                    portfolio = {};
+                    alert("讀取儲存的資料時發生錯誤，將使用空的投資組合。");
+                }
+            } else {
+                portfolio = {};
+                console.log("No saved portfolio v16 found.");
+            }
+        }
+
+        function savePortfolio() {
             try {
                 localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(portfolio));
+                console.log("Portfolio v16 saved:", portfolio);
             } catch (e) {
-                 console.error("無法儲存投資組合:", e);
-                 showMessage("儲存資料時發生錯誤。", "error");
+                 console.error("Error saving portfolio to localStorage:", e);
+                 alert("儲存資料時發生錯誤，您的變更可能不會被保留。");
             }
         }
-        // --- 結束 本機儲存相關 ---
 
-        // 初始化投資組合 (從 localStorage 載入)
-        let portfolio = loadPortfolio();
-
-        // 顯示提示訊息
-        function showMessage(message, type = 'success') {
-            messageBox.textContent = message;
-            messageBox.classList.remove('hidden', 'bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700');
-            if (type === 'success') {
-                messageBox.classList.add('bg-green-100', 'text-green-700');
-            } else if (type === 'error') {
-                messageBox.classList.add('bg-red-100', 'text-red-700');
+        function handleSymbolBlur() {
+            const symbol = addSymbolInput.value.trim().toUpperCase();
+            symbolStatus.textContent = '';
+            if (!symbol) {
+                addNameInput.value = '';
+                return;
             }
-            messageBox.classList.remove('hidden');
-            // 短暫顯示後自動隱藏
-            setTimeout(() => {
-                messageBox.classList.add('hidden');
-            }, 3000); // 顯示 3 秒
+            if (marketData && marketData[symbol] && marketData[symbol].name) {
+                addNameInput.value = marketData[symbol].name;
+                symbolStatus.textContent = '名稱已自動帶入 (來自上次更新)';
+            } else {
+                addNameInput.value = '';
+                symbolStatus.textContent = '未找到名稱，請手動輸入或更新行情';
+            }
+             setTimeout(() => { symbolStatus.textContent = ''; }, 4000);
         }
 
+        function addPurchase() {
+            const symbol = addSymbolInput.value.trim().toUpperCase();
+            const name = addNameInput.value.trim();
+            const shares = parseFloat(addSharesInput.value);
+            const price = parseFloat(addPriceInput.value);
+            const feeAmount = parseFloat(addFeeAmountInput.value);
 
-        // 渲染投資組合列表
-        function renderPortfolio() {
-            stockList.innerHTML = ''; // 清空現有列表
-            let totalPortfolioValue = 0;
-
-            portfolio.forEach((stock, index) => {
-                const marketValue = (stock.closePrice * stock.shares); // 使用收盤價計算市值
-                totalPortfolioValue += marketValue;
-
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${stock.symbol}</td>
-                    <td>${stock.shares.toLocaleString()}</td>
-                    <td>NT$ ${stock.price.toFixed(2)}</td>
-                    <td>NT$ ${stock.closePrice.toFixed(2)}</td>
-                    <td>NT$ ${marketValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                    <td><button class="remove-button" data-index="${index}">移除</button></td>
-                `;
-                stockList.appendChild(row);
-            });
-
-            // 更新總市值顯示
-            totalValueDiv.textContent = `總市值: NT$ ${totalPortfolioValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-             // 儲存更新後的投資組合到 localStorage
-            savePortfolio(portfolio);
-        }
-
-        // 新增股票處理函數
-        function addStock() {
-            const symbol = stockSymbolInput.value.trim().toUpperCase();
-            const shares = parseFloat(stockSharesInput.value);
-            const price = parseFloat(stockPriceInput.value);
-            const closePrice = parseFloat(stockClosePriceInput.value); // 獲取收盤價
-
-            // 輸入驗證
-            if (!symbol || isNaN(shares) || isNaN(price) || isNaN(closePrice) || shares <= 0 || price < 0 || closePrice < 0) {
-                 showMessage('請輸入有效的股票代號、股數、買入價格和昨日收盤價。', 'error');
+            if (!symbol || !name || isNaN(shares) || shares <= 0 || isNaN(price) || price <= 0 || isNaN(feeAmount) || feeAmount < 0) {
+                alert('請確保所有必填欄位 (*)\n都已正確填寫且數值有效。\n股數和價格必須大於 0，手續費不能為負。');
                 return;
             }
 
-            // 檢查是否已存在相同代號的股票
-            const existingStockIndex = portfolio.findIndex(stock => stock.symbol === symbol);
+            const purchaseCost = shares * price;
+            const costWithFee = purchaseCost + feeAmount;
+            const purchaseDate = new Date().toLocaleDateString();
 
-            if (existingStockIndex > -1) {
-                // 更新現有股票 (如果需要合併或提示，可以在此處修改邏輯)
-                 showMessage(`股票 ${symbol} 已存在於投資組合中。`, 'error');
-                 // 或者可以選擇合併持股:
-                 // portfolio[existingStockIndex].shares += shares;
-                 // portfolio[existingStockIndex].price = ((portfolio[existingStockIndex].price * portfolio[existingStockIndex].shares) + (price * shares)) / (portfolio[existingStockIndex].shares + shares); // 重新計算平均成本 (可選)
-                 // portfolio[existingStockIndex].closePrice = closePrice; // 更新收盤價
-            } else {
-                 // 新增股票到投資組合陣列
-                portfolio.push({ symbol, shares, price, closePrice });
-                 showMessage(`已成功新增股票 ${symbol}。`, 'success');
+            if (!portfolio[symbol]) {
+                portfolio[symbol] = { name: name, shares: 0, totalCost: 0, purchases: [] };
             }
+            portfolio[symbol].name = name;
+            portfolio[symbol].purchases.push({ date: purchaseDate, shares, price, commissionAmount: feeAmount, costWithFee });
+            portfolio[symbol].shares += shares;
+            portfolio[symbol].totalCost += costWithFee;
 
-
-            // 清空輸入欄位
-            stockSymbolInput.value = '';
-            stockSharesInput.value = '';
-            stockPriceInput.value = '';
-            stockClosePriceInput.value = ''; // 清空收盤價輸入
-
-            // 重新渲染列表
+            lastRemovedHolding = null;
+            undoRemoveBtn.style.display = 'none';
+            savePortfolio();
             renderPortfolio();
+            renderPurchaseLog();
+
+            addSymbolInput.value = '';
+            addNameInput.value = '';
+            addSharesInput.value = '';
+            addPriceInput.value = '';
+            addFeeAmountInput.value = '0';
+            addStatus.textContent = `已新增 ${symbol} ${shares} 股購買紀錄。`;
+            setTimeout(() => { addStatus.textContent = ''; }, 3000);
         }
 
-        // 移除股票處理函數
-        function removeStock(event) {
-            if (event.target.classList.contains('remove-button')) {
-                const indexToRemove = parseInt(event.target.dataset.index);
-                const removedStock = portfolio.splice(indexToRemove, 1)[0]; // 從陣列中移除股票
-                showMessage(`已移除股票 ${removedStock.symbol}。`, 'success');
-                renderPortfolio(); // 重新渲染列表
+        function removeHolding(symbol) {
+             if (portfolio[symbol]) {
+                 const removedData = JSON.parse(JSON.stringify(portfolio[symbol]));
+                 if (confirm(`確定要移除 ${symbol} (${portfolio[symbol].name}) 的所有持股紀錄嗎？此操作可復原一次。`)) {
+                     lastRemovedHolding = { symbol: symbol, data: removedData };
+                     delete portfolio[symbol];
+                     savePortfolio();
+                     renderPortfolio();
+                     renderPurchaseLog();
+                     undoRemoveBtn.style.display = 'inline-flex';
+                     console.log(`Removed holding: ${symbol}. Undo state saved.`);
+                     dataStatus.textContent = `已移除持股 ${symbol}。可點擊按鈕復原。`;
+                 }
+             } else {
+                 console.warn(`Attempted to remove non-existent holding: ${symbol}`);
+             }
+        }
+
+        function undoLastRemove() {
+            if (lastRemovedHolding) {
+                portfolio[lastRemovedHolding.symbol] = lastRemovedHolding.data;
+                console.log(`Restored holding: ${lastRemovedHolding.symbol}`);
+                lastRemovedHolding = null;
+                undoRemoveBtn.style.display = 'none';
+                savePortfolio();
+                renderPortfolio();
+                renderPurchaseLog();
+                dataStatus.textContent = '已復原上次移除的操作。';
+                setTimeout(() => { dataStatus.textContent = ''; }, 3000);
+            } else {
+                 console.warn("No remove action to undo.");
+                 alert("沒有可復原的移除操作。");
+                 undoRemoveBtn.style.display = 'none';
             }
         }
 
-        // --- 事件監聽器 ---
-        addStockButton.addEventListener('click', addStock);
-        // 允許在輸入框按 Enter 鍵新增股票
-        stockSymbolInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addStock(); });
-        stockSharesInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addStock(); });
-        stockPriceInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addStock(); });
-        stockClosePriceInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addStock(); }); // 收盤價輸入框也監聽 Enter
-        stockList.addEventListener('click', removeStock); // 使用事件委派來處理移除按鈕
+        function deletePurchase(symbol, index) {
+            if (!portfolio[symbol] || !portfolio[symbol].purchases || index < 0 || index >= portfolio[symbol].purchases.length) {
+                 console.error(`Invalid symbol or index for deleting purchase: ${symbol}, ${index}`);
+                 alert("刪除交易紀錄時發生錯誤。");
+                 return;
+            }
 
-        // --- 初始渲染 ---
-        renderPortfolio(); // 頁面載入時渲染初始投資組合 (從 localStorage 載入)
+            const purchaseToRemove = portfolio[symbol].purchases[index];
+            const purchaseInfo = `${purchaseToRemove.date} ${symbol} ${purchaseToRemove.shares}股 @ ${purchaseToRemove.price}`;
 
-    </script>
-</body>
-</html>
-
+            if (confirm(`確定要刪除這筆交易紀錄嗎？\n${purchaseInfo}\n此操作無法復原。`)) {
+                 p
