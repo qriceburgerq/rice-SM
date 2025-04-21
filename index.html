@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>股票投資組合追蹤器 (收盤價)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* 淺灰色背景 */
+        }
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: white;
+            border-radius: 0.5rem; /* 圓角 */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* 陰影 */
+        }
+        .form-input, .form-button {
+            border-radius: 0.375rem; /* 圓角 */
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db; /* 灰色邊框 */
+            transition: box-shadow 0.15s ease-in-out;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6; /* 藍色焦點邊框 */
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+        }
+        .form-button {
+            background-color: #3b82f6; /* 藍色按鈕 */
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.15s ease-in-out;
+        }
+        .form-button:hover {
+            background-color: #2563eb; /* 深藍色懸停效果 */
+        }
+        .stock-table th, .stock-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb; /* 淺灰色底線 */
+        }
+        .stock-table th {
+            background-color: #f9fafb; /* 更淺的灰色表頭 */
+            font-weight: 600;
+            color: #4b5563; /* 深灰色文字 */
+        }
+        .remove-button {
+            background-color: #ef4444; /* 紅色移除按鈕 */
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: background-color 0.15s ease-in-out;
+            font-size: 0.875rem; /* 稍小字體 */
+        }
+        .remove-button:hover {
+            background-color: #dc2626; /* 深紅色懸停效果 */
+        }
+        .total-value {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background-color: #eef2ff; /* 淡藍色背景 */
+            border-radius: 0.375rem;
+            text-align: right;
+            font-size: 1.125rem; /* 稍大字體 */
+            font-weight: 600;
+            color: #374151; /* 深灰色文字 */
+        }
+        /* 手機版樣式 */
+        @media (max-width: 640px) {
+            .container {
+                margin: 1rem;
+                padding: 1rem;
+            }
+            .add-stock-form {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem; /* 欄位間距 */
+            }
+            .stock-table th, .stock-table td {
+                padding: 0.5rem;
+                font-size: 0.875rem; /* 手機版字體縮小 */
+            }
+            .stock-table th:nth-child(3), /* 隱藏部分欄位 */
+            .stock-table td:nth-child(3),
+            .stock-table th:nth-child(4),
+            .stock-table td:nth-child(4) {
+                display: none;
+            }
+            .total-value {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">股票投資組合追蹤器 (收盤價)</h1>
+
+        <div class="add-stock-form mb-6 grid grid-cols-1 sm:grid-cols-5 gap-4 items-end">
+            <div>
+                <label for="stock-symbol" class="block text-sm font-medium text-gray-700 mb-1">股票代號:</label>
+                <input type="text" id="stock-symbol" class="form-input w-full" placeholder="例如: 2330">
+            </div>
+            <div>
+                <label for="stock-shares" class="block text-sm font-medium text-gray-700 mb-1">持有股數:</label>
+                <input type="number" id="stock-shares" class="form-input w-full" placeholder="例如: 1000">
+            </div>
+            <div>
+                <label for="stock-price" class="block text-sm font-medium text-gray-700 mb-1">買入均價:</label>
+                <input type="number" id="stock-price" class="form-input w-full" placeholder="例如: 600">
+            </div>
+            <div>
+                <label for="stock-close-price" class="block text-sm font-medium text-gray-700 mb-1">昨日收盤價:</label>
+                <input type="number" id="stock-close-price" class="form-input w-full" placeholder="例如: 650">
+            </div>
+            <button id="add-stock-button" class="form-button w-full sm:w-auto">新增股票</button>
+        </div>
+
+        <div class="overflow-x-auto">
+             <table class="min-w-full stock-table">
+                <thead>
+                    <tr>
+                        <th>股票代號</th>
+                        <th>持有股數</th>
+                        <th>買入均價</th>
+                        <th>昨日收盤價</th>
+                        <th>市值</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="stock-list">
+                    </tbody>
+            </table>
+        </div>
+
+
+        <div id="total-value" class="total-value">
+            總市值: NT$ 0.00
+        </div>
+         <div id="message-box" class="mt-4 p-3 rounded-md text-sm hidden"></div>
+    </div>
+
+    <script>
+        const stockSymbolInput = document.getElementById('stock-symbol');
+        const stockSharesInput = document.getElementById('stock-shares');
+        const stockPriceInput = document.getElementById('stock-price');
+        const stockClosePriceInput = document.getElementById('stock-close-price'); // 新增收盤價輸入框
+        const addStockButton = document.getElementById('add-stock-button');
+        const stockList = document.getElementById('stock-list');
+        const totalValueDiv = document.getElementById('total-value');
+        const messageBox = document.getElementById('message-box');
+
+        // --- 本機儲存相關 ---
+        const LOCAL_STORAGE_KEY = 'stockPortfolioClosingPrice';
+
+        // 從 localStorage 載入投資組合
+        function loadPortfolio() {
+            const storedPortfolio = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (storedPortfolio) {
+                try {
+                    return JSON.parse(storedPortfolio);
+                } catch (e) {
+                    console.error("無法解析儲存的投資組合:", e);
+                    showMessage("載入儲存資料時發生錯誤。", "error");
+                    return []; // 解析失敗時返回空陣列
+                }
+            }
+            return []; // 如果沒有儲存的資料，返回空陣列
+        }
+
+        // 將投資組合儲存到 localStorage
+        function savePortfolio(portfolio) {
+            try {
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(portfolio));
+            } catch (e) {
+                 console.error("無法儲存投資組合:", e);
+                 showMessage("儲存資料時發生錯誤。", "error");
+            }
+        }
+        // --- 結束 本機儲存相關 ---
+
+        // 初始化投資組合 (從 localStorage 載入)
+        let portfolio = loadPortfolio();
+
+        // 顯示提示訊息
+        function showMessage(message, type = 'success') {
+            messageBox.textContent = message;
+            messageBox.classList.remove('hidden', 'bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700');
+            if (type === 'success') {
+                messageBox.classList.add('bg-green-100', 'text-green-700');
+            } else if (type === 'error') {
+                messageBox.classList.add('bg-red-100', 'text-red-700');
+            }
+            messageBox.classList.remove('hidden');
+            // 短暫顯示後自動隱藏
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 3000); // 顯示 3 秒
+        }
+
+
+        // 渲染投資組合列表
+        function renderPortfolio() {
+            stockList.innerHTML = ''; // 清空現有列表
+            let totalPortfolioValue = 0;
+
+            portfolio.forEach((stock, index) => {
+                const marketValue = (stock.closePrice * stock.shares); // 使用收盤價計算市值
+                totalPortfolioValue += marketValue;
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${stock.symbol}</td>
+                    <td>${stock.shares.toLocaleString()}</td>
+                    <td>NT$ ${stock.price.toFixed(2)}</td>
+                    <td>NT$ ${stock.closePrice.toFixed(2)}</td>
+                    <td>NT$ ${marketValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td><button class="remove-button" data-index="${index}">移除</button></td>
+                `;
+                stockList.appendChild(row);
+            });
+
+            // 更新總市值顯示
+            totalValueDiv.textContent = `總市值: NT$ ${totalPortfolioValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+             // 儲存更新後的投資組合到 localStorage
+            savePortfolio(portfolio);
+        }
+
+        // 新增股票處理函數
+        function addStock() {
+            const symbol = stockSymbolInput.value.trim().toUpperCase();
+            const shares = parseFloat(stockSharesInput.value);
+            const price = parseFloat(stockPriceInput.value);
+            const closePrice = parseFloat(stockClosePriceInput.value); // 獲取收盤價
+
+            // 輸入驗證
+            if (!symbol || isNaN(shares) || isNaN(price) || isNaN(closePrice) || shares <= 0 || price < 0 || closePrice < 0) {
+                 showMessage('請輸入有效的股票代號、股數、買入價格和昨日收盤價。', 'error');
+                return;
+            }
+
+            // 檢查是否已存在相同代號的股票
+            const existingStockIndex = portfolio.findIndex(stock => stock.symbol === symbol);
+
+            if (existingStockIndex > -1) {
+                // 更新現有股票 (如果需要合併或提示，可以在此處修改邏輯)
+                 showMessage(`股票 ${symbol} 已存在於投資組合中。`, 'error');
+                 // 或者可以選擇合併持股:
+                 // portfolio[existingStockIndex].shares += shares;
+                 // portfolio[existingStockIndex].price = ((portfolio[existingStockIndex].price * portfolio[existingStockIndex].shares) + (price * shares)) / (portfolio[existingStockIndex].shares + shares); // 重新計算平均成本 (可選)
+                 // portfolio[existingStockIndex].closePrice = closePrice; // 更新收盤價
+            } else {
+                 // 新增股票到投資組合陣列
+                portfolio.push({ symbol, shares, price, closePrice });
+                 showMessage(`已成功新增股票 ${symbol}。`, 'success');
+            }
+
+
+            // 清空輸入欄位
+            stockSymbolInput.value = '';
+            stockSharesInput.value = '';
+            stockPriceInput.value = '';
+            stockClosePriceInput.value = ''; // 清空收盤價輸入
+
+            // 重新渲染列表
+            renderPortfolio();
+        }
+
+        // 移除股票處理函數
+        function removeStock(event) {
+            if (event.target.classList.contains('remove-button')) {
+                const indexToRemove = parseInt(event.target.dataset.index);
+                const removedStock = portfolio.splice(indexToRemove, 1)[0]; // 從陣列中移除股票
+                showMessage(`已移除股票 ${removedStock.symbol}。`, 'success');
+                renderPortfolio(); // 重新渲染列表
+            }
+        }
+
+        // --- 事件監聽器 ---
+        addStockButton.addEventListener('click', addStock);
+        // 允許在輸入框按 Enter 鍵新增股票
+        stockSymbolInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addStock(); });
+        stockSharesInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addStock(); });
+        stockPriceInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addStock(); });
+        stockClosePriceInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addStock(); }); // 收盤價輸入框也監聽 Enter
+        stockList.addEventListener('click', removeStock); // 使用事件委派來處理移除按鈕
+
+        // --- 初始渲染 ---
+        renderPortfolio(); // 頁面載入時渲染初始投資組合 (從 localStorage 載入)
+
+    </script>
+</body>
+</html>
+
+            const tdBaseClasses = "px-3 py-2 text-sm border border-gray-600 whitespace-nowrap"; // Base padding/border only
+            const tdAction = `${tdBaseClasses} action-col text-center`; // Action column
+
+            if (symbols.length === 0) {
+                 purchaseLogBody.innerHTML = `<tr><td colspan="7" class="${tdBaseClasses} text-center text-gray-400 py-4">沒有交易紀錄</td></tr>`;
+                 return;
+            }
+
+            let hasPurchases = false;
+            symbols.forEach(symbol => {
+                 const holding = portfolio[symbol];
+                 if (holding && Array.isArray(holding.purchases)) {
+                     const sortedPurchases = holding.purchases.sort((a, b) => (new Date(a.date) || 0) - (new Date(b.date) || 0));
+
+                     sortedPurchases.forEach((purchase, index) => {
+                         hasPurchases = true;
+                         const row = document.createElement('tr');
+                         // Apply alignment classes directly
+                         row.innerHTML = `
+                            <td class="${tdBaseClasses} text-center">${purchase.date || 'N/A'}</td>
+                            <td class="${tdBaseClasses} text-center">${symbol}</td>
+                            <td class="${tdBaseClasses} text-center">${holding.name || 'N/A'}</td>
+                            <td class="${tdBaseClasses} text-right">${purchase.shares?.toLocaleString() || 'N/A'}</td>
+                            <td class="${tdBaseClasses} text-right">${purchase.price?.toFixed(2) || 'N/A'}</td>
+                            <td class="${tdBaseClasses} text-right">${purchase.commissionAmount?.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) || '0'}</td>
+                            <td class="${tdAction}">
+                                <button class="btn-danger delete-purchase-btn" data-symbol="${symbol}" data-index="${index}">刪除</button>
+                            </td>
+                         `;
+                         purchaseLogBody.appendChild(row);
+                     });
+                 }
+            });
+
+             if (!hasPurchases) {
+                 purchaseLogBody.innerHTML = `<tr><td colspan="7" class="${tdBaseClasses} text-center text-gray-400 py-4">沒有交易紀錄</td></tr>`;
+             }
+        }
+
+
+        function exportData() {
+            if (Object.keys(portfolio).length === 0) { alert("沒有資料可匯出。"); return; }
+            try {
+                const now = new Date();
+                const month = padZero(now.getMonth() + 1);
+                const day = padZero(now.getDate());
+                const hours = padZero(now.getHours());
+                const minutes = padZero(now.getMinutes());
+                const timestamp = `${month}${day}${hours}${minutes}`;
+                const filename = `RICE_portfolio_${timestamp}.json`;
+                const jsonString = JSON.stringify(portfolio, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = filename;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                dataStatus.textContent = `資料已成功匯出為 ${filename}！`;
+                console.log("Data exported as:", filename);
+            } catch (e) {
+                 console.error("Export failed:", e); dataStatus.textContent = '資料匯出失敗。'; alert("資料匯出失敗：" + e.message);
+            }
+             lastRemovedHolding = null; undoRemoveBtn.style.display = 'none';
+             setTimeout(() => { dataStatus.textContent = ''; }, 3000);
+        }
+
+        async function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (!file.name.toLowerCase().endsWith('.json')) {
+                 alert("請選擇一個 .json 格式的檔案。"); event.target.value = null; return;
+            }
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (typeof importedData !== 'object' || importedData === null || Array.isArray(importedData)) {
+                        throw new Error("匯入的檔案格式不符，必須是一個物件。");
+                    }
+                     Object.values(importedData).forEach(holding => {
+                         if (!holding || typeof holding.shares !== 'number' || typeof holding.totalCost !== 'number' || !Array.isArray(holding.purchases)) {
+                             throw new Error("匯入的資料結構不完整或錯誤。");
+                         }
+                         holding.purchases.forEach(p => { if (!p.date) p.date = 'N/A'; });
+                     });
+
+                    if (confirm("確定要匯入資料嗎？\n這將會覆蓋您目前的持股資料！")) {
+                        portfolio = importedData;
+                        savePortfolio();
+                        marketData = {};
+                        lastRemovedHolding = null;
+                        undoRemoveBtn.style.display = 'none';
+                        dataStatus.textContent = '資料已成功匯入！正在更新行情...';
+                        await fetchDailyClosingPrices();
+                        renderPortfolio();
+                        renderPurchaseLog();
+                        dataStatus.textContent = '資料已成功匯入並更新行情！';
+                        console.log("Data imported:", portfolio);
+                    }
+                } catch (error) {
+                    console.error("Import failed:", error);
+                    dataStatus.textContent = '資料匯入失敗：' + error.message;
+                    alert("資料匯入失敗：\n" + error.message + "\n請確保檔案是正確的 JSON 格式且結構無誤。");
+                } finally {
+                     event.target.value = null;
+                     setTimeout(() => { dataStatus.textContent = ''; }, 5000);
+                }
+            };
+            reader.onerror = function() {
+                 console.error("File reading error:", reader.error);
+                 dataStatus.textContent = '讀取檔案時發生錯誤。';
+                 alert("讀取檔案時發生錯誤。");
+                 event.target.value = null;
+                 setTimeout(() => { dataStatus.textContent = ''; }, 3000);
+            };
+            reader.readAsText(file);
+        }
+
+        // --- 新增：切換新增表單顯示 ---
+        function toggleAddForm() {
+            if (addFormSection.style.display === 'none') {
+                addFormSection.style.display = 'block';
+                toggleAddFormBtn.textContent = '隱藏新增持股區塊';
+            } else {
+                addFormSection.style.display = 'none';
+                toggleAddFormBtn.textContent = '顯示新增持股區塊';
+            }
+        }
+
+        // --- 事件監聽器 ---
+        addSymbolInput.addEventListener('blur', handleSymbolBlur);
+        addPurchaseBtn.addEventListener('click', addPurchase);
+        refreshDailyBtn.addEventListener('click', async () => {
+            await fetchDailyClosingPrices();
+            renderPortfolio();
+            renderPurchaseLog();
+        });
+        exportBtn.addEventListener('click', exportData);
+        importBtn.addEventListener('click', () => importFileInput.click());
+        importFileInput.addEventListener('change', importData);
+        undoRemoveBtn.addEventListener('click', undoLastRemove);
+        toggleAddFormBtn.addEventListener('click', toggleAddForm);
+
+        portfolioBody.addEventListener('click', (event) => {
+             const button = event.target.closest('button.btn-danger');
+             if (button && button.hasAttribute('data-symbol')) {
+                 const symbolToRemove = button.getAttribute('data-symbol');
+                 removeHolding(symbolToRemove);
+             }
+        });
+
+        purchaseLogBody.addEventListener('click', (event) => {
+             const button = event.target.closest('button.delete-purchase-btn');
+             if (button && button.hasAttribute('data-symbol') && button.hasAttribute('data-index')) {
+                 const symbol = button.getAttribute('data-symbol');
+                 const index = parseInt(button.getAttribute('data-index'), 10);
+                 if (symbol && !isNaN(index)) {
+                     deletePurchase(symbol, index);
+                 }
+             }
+        });
+
+
+        // --- 初始載入 ---
+        document.addEventListener('DOMContentLoaded', async () => {
+             loadPortfolio();
+             renderPortfolio();
+             renderPurchaseLog();
+             const fetchSuccess = await fetchDailyClosingPrices();
+             if(fetchSuccess) {
+                 renderPortfolio();
+             } else {
+                 refreshStatus.textContent = '頁面載入時行情更新失敗，請稍後手動更新。';
+             }
+        });
+
+    </script>
+</body>
+</html>
